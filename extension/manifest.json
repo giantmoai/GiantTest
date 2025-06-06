@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "Simple Vocab Helper",
+  "version": "1.0",
+  "description": "Helps kids learn English vocabulary through flashcards.",
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

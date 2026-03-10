@@ -39,11 +39,35 @@ def _build_segments(form: dict[str, list[str]], segment_count: int) -> list[Segm
     return segments
 
 
+def _instructions_html() -> str:
+    return """
+    <section class="card">
+      <h2>畫面說明（操作步驟）</h2>
+      <ol>
+        <li>先填「段數（1-4）」與「最多輸出連結數」。</li>
+        <li>依段數填寫對應 segment 區塊。</li>
+        <li>機場欄位可填多個 IATA 代碼，請用逗號分隔（例如：TPE,KHH）。</li>
+        <li>每段可設定日期範圍、必經機場、是否可出關停留。</li>
+        <li>送出後可在「搜尋連結」區直接點擊開啟 Skyscanner。</li>
+      </ol>
+      <h3>欄位說明</h3>
+      <table>
+        <tr><th>欄位</th><th>用途</th><th>範例</th></tr>
+        <tr><td>出發機場</td><td>每段起點，可多選</td><td>TPE,KHH</td></tr>
+        <tr><td>抵達機場</td><td>每段終點，可多選</td><td>NRT,HND</td></tr>
+        <tr><td>出發起日/迄日</td><td>日期彈性區間</td><td>2026-06-01 ~ 2026-06-03</td></tr>
+        <tr><td>必經機場</td><td>指定轉機偏好（可留白）</td><td>SIN</td></tr>
+        <tr><td>可出關停留</td><td>接受中轉出關停留</td><td>勾選</td></tr>
+      </table>
+    </section>
+    """
+
+
 def render_form(message: str = "", results: list[str] | None = None) -> str:
     result_html = ""
     if results:
         items = "".join(f'<li><a href="{escape(u)}" target="_blank">{escape(u)}</a></li>' for u in results)
-        result_html = f"<h2>搜尋連結</h2><ol>{items}</ol>"
+        result_html = f'<section class="card"><h2>搜尋連結</h2><ol>{items}</ol></section>'
 
     return f"""<!doctype html>
 <html lang="zh-Hant">
@@ -51,9 +75,14 @@ def render_form(message: str = "", results: list[str] | None = None) -> str:
   <meta charset="utf-8" />
   <title>Skyscanner 便宜機票搜尋工具</title>
   <style>
-    body {{ font-family: Arial, sans-serif; margin: 24px; max-width: 900px; }}
-    fieldset {{ margin-bottom: 16px; }}
+    body {{ font-family: Arial, sans-serif; margin: 24px; max-width: 980px; background: #f7f7f7; }}
+    .card {{ background: #fff; padding: 16px; border-radius: 10px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }}
+    fieldset {{ margin-bottom: 16px; border: 1px solid #ccc; border-radius: 8px; }}
+    legend {{ font-weight: 700; }}
     label {{ display: block; margin: 6px 0; }}
+    input {{ padding: 4px 6px; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
     .msg {{ color: #b00020; font-weight: bold; }}
   </style>
 </head>
@@ -61,13 +90,19 @@ def render_form(message: str = "", results: list[str] | None = None) -> str:
   <h1>Skyscanner 便宜機票搜尋工具</h1>
   <p>支援多機場、日期範圍、多段（最多4段）、每段必經機場、可否出關停留。</p>
   <p class="msg">{escape(message)}</p>
-  <form method="post" action="/search">
-    <label>段數 (1-4)：<input type="number" name="segment_count" min="1" max="4" value="1" required></label>
-    <label>最多輸出連結數：<input type="number" name="max_queries" min="1" value="50" required></label>
-    <p>請先填「段數」，並填寫對應段位欄位（segment_1 ~ segment_4）。未使用段位可留白。</p>
-    {''.join(_segment_fieldset(i) for i in range(1, 5))}
-    <button type="submit">產生搜尋連結</button>
-  </form>
+
+  {_instructions_html()}
+
+  <section class="card">
+    <h2>搜尋條件輸入</h2>
+    <form method="post" action="/search">
+      <label>段數 (1-4)：<input type="number" name="segment_count" min="1" max="4" value="1" required></label>
+      <label>最多輸出連結數：<input type="number" name="max_queries" min="1" value="50" required></label>
+      {''.join(_segment_fieldset(i) for i in range(1, 5))}
+      <button type="submit">產生搜尋連結</button>
+    </form>
+  </section>
+
   {result_html}
 </body>
 </html>
@@ -116,7 +151,7 @@ class FlightSearchHandler(BaseHTTPRequestHandler):
             config = SearchConfig(segments=segments, max_queries=max_queries)
             urls = [q.to_skyscanner_url() for q in generate_queries(config)]
             self._send_html(render_form(f"成功產生 {len(urls)} 筆連結", urls))
-        except Exception as exc:  # user input validation
+        except Exception as exc:
             self._send_html(render_form(f"輸入錯誤：{exc}"))
 
     def _send_html(self, html: str) -> None:

@@ -1,6 +1,6 @@
 # GiantTest
 
-這個小工具可協助你在 Skyscanner 規劃「便宜機票」搜尋條件，支援：
+這個工具可協助你在 Skyscanner 規劃「便宜機票」搜尋條件，支援：
 
 - 自選機場（每段可多選出發/抵達機場）
 - 時間範圍（每段可設出發日期區間）
@@ -8,7 +8,23 @@
 - 每段必經機場（`via_airports`）
 - 中間機場是否可出關停留（`allow_exit_transit`）
 
-## 使用方式
+## Web 介面
+
+```bash
+python web_app.py
+```
+
+啟動後打開 `http://localhost:8000`，在畫面輸入：
+
+- 段數（1-4）
+- 每段出發/抵達機場（逗號分隔）
+- 每段日期範圍
+- 每段必經機場（逗號分隔）
+- 每段是否可出關停留
+
+送出後會產生一組可點擊的 Skyscanner 搜尋連結。
+
+## Python 程式使用方式
 
 ```python
 from datetime import date
